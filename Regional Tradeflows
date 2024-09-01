@@ -1,0 +1,117 @@
+# Step 1: Calculate total resources for each region
+Total_resources_NW <- rowSums(NW)         # Northwest Italy
+Total_resources_NE <- rowSums(NE)         # Northeast Italy
+Total_resources_CN <- rowSums(CN)         # Central Italy (Toscana)
+Total_resources_MEZ <- rowSums(MEZ)       # Mediterranean Italy (Centro)
+Total_resources_Ext <- rowSums(Ext)       # External (Sud)
+
+# Step 2: Calculate diagonal matrix for intermediate imports to total resources ratio for each region
+dint_NW <- diag(Imp_intermediate_NW' / Total_resources_NW)
+dint_NE <- diag(Imp_intermediate_NE' / Total_resources_NE)
+dint_CN <- diag(Imp_intermediate_CN' / Total_resources_CN)
+dint_MEZ <- diag(Imp_intermediate_MEZ' / Total_resources_MEZ)
+dint_Ext <- diag(Imp_intermediate_Ext' / Total_resources_Ext)
+
+# Step 3: Calculate intermediate flow shares for internal production for each region
+IntShares_NW <- L - dint_NW
+IntShares_NE <- L - dint_NE
+IntShares_CN <- L - dint_CN
+IntShares_MEZ <- L - dint_MEZ
+IntShares_Ext <- L - dint_Ext
+
+# Step 4: Compute internal production matrix for each region
+internalProduction_NW <- NW %*% IntShares_NW
+internalProduction_NE <- NE %*% IntShares_NE
+internalProduction_CN <- CN %*% IntShares_CN
+internalProduction_MEZ <- MEZ %*% IntShares_MEZ
+internalProduction_Ext <- Ext %*% IntShares_Ext
+
+# Step 5: Calculate total intermediate purchases as shares of total resources for each region
+totalIntermediatePurchases_NW <- NW / Total_resources_NW
+totalIntermediatePurchases_NE <- NE / Total_resources_NE
+totalIntermediatePurchases_CN <- CN / Total_resources_CN
+totalIntermediatePurchases_MEZ <- MEZ / Total_resources_MEZ
+totalIntermediatePurchases_Ext <- Ext / Total_resources_Ext
+
+# Step 6: Calculate interregional intermediate imports for each region
+importsInterregional_NW <- diag(int_trade_2019_NW) %*% totalIntermediatePurchases_NW
+importsInterregional_NE <- diag(int_trade_2019_NE) %*% totalIntermediatePurchases_NE
+importsInterregional_CN <- diag(int_trade_2019_CN) %*% totalIntermediatePurchases_CN
+importsInterregional_MEZ <- diag(int_trade_2019_MEZ) %*% totalIntermediatePurchases_MEZ
+importsInterregional_Ext <- diag(int_trade_2019_Ext) %*% totalIntermediatePurchases_Ext
+
+# Step 7: Calculate international intermediate imports for MEZ (Mediterranean Italy - Centro)
+internationalImportsMatrix_MEZ <- diag(Foreign_imp_int) %*% totalIntermediatePurchases_MEZ
+
+# Step 8: Calculate normalized interregional imports by total intermediate purchases (MEZ)
+S_MEZ <- rowSums(importsInterregional_MEZ)
+d_MEZ <- importsInterregional_MEZ / S_MEZ
+importsInterregional_MEZ_normalized <- diag(int_trade_2019_MEZ) %*% d_MEZ
+
+# Step 9: Normalize internal production by total production for each region
+S_NW <- rowSums(internalProduction_NW)
+S_NE <- rowSums(internalProduction_NE)
+S_CN <- rowSums(internalProduction_CN)
+S_MEZ <- rowSums(internalProduction_MEZ)
+S_Ext <- rowSums(internalProduction_Ext)
+
+d_NW <- internalProduction_NW / S_NW
+d_NE <- internalProduction_NE / S_NE
+d_CN <- internalProduction_CN / S_CN
+d_MEZ <- internalProduction_MEZ / S_MEZ
+d_Ext <- internalProduction_Ext / S_Ext
+
+# Step 10: Calculate total final consumption and corresponding shares for each region
+total_final_consumption_NW <- rowSums(final_consumption_NW)
+total_final_consumption_NE <- rowSums(final_consumption_NE)
+total_final_consumption_CN <- rowSums(final_consumption_CN)
+total_final_consumption_MEZ <- rowSums(final_consumption_MEZ)
+total_final_consumption_Ext <- rowSums(final_consumption_Ext)
+
+dfin_NW <- diag(Imp_final_NW' / total_final_consumption_NW)
+dfin_NE <- diag(Imp_final_NE' / total_final_consumption_NE)
+dfin_CN <- diag(Imp_final_CN' / total_final_consumption_CN)
+dfin_MEZ <- diag(Imp_final_MEZ' / total_final_consumption_MEZ)
+dfin_Ext <- diag(Imp_final_Ext' / total_final_consumption_Ext)
+
+# Step 11: Calculate final consumption flow shares for internal production for each region
+FinShares_NW <- L - dfin_NW
+FinShares_NE <- L - dfin_NE
+FinShares_CN <- L - dfin_CN
+FinShares_MEZ <- L - dfin_MEZ
+FinShares_Ext <- L - dfin_Ext
+
+# Compute final consumption internal production for each region
+finalConsumptionInternal_NW <- final_consumption_NW * rowSums(FinShares_NW)
+finalConsumptionInternal_NE <- final_consumption_NE * rowSums(FinShares_NE)
+finalConsumptionInternal_CN <- final_consumption_CN * rowSums(FinShares_CN)
+finalConsumptionInternal_MEZ <- final_consumption_MEZ * rowSums(FinShares_MEZ)
+finalConsumptionInternal_Ext <- final_consumption_Ext * rowSums(FinShares_Ext)
+
+# Step 12: Calculate total final purchases as shares of total consumption for each region
+totalFinalPurchases_NW <- final_consumption_NW / total_final_consumption_NW
+totalFinalPurchases_NE <- final_consumption_NE / total_final_consumption_NE
+totalFinalPurchases_CN <- final_consumption_CN / total_final_consumption_CN
+totalFinalPurchases_MEZ <- final_consumption_MEZ / total_final_consumption_MEZ
+totalFinalPurchases_Ext <- final_consumption_Ext / total_final_consumption_Ext
+
+# Step 13: Calculate interregional final exports for each region
+exportsInterregionalFinal_NW <- diag(int_trade_df_NW) %*% totalFinalPurchases_NW
+exportsInterregionalFinal_NE <- diag(int_trade_df_NE) %*% totalFinalPurchases_NE
+exportsInterregionalFinal_CN <- diag(int_trade_df_CN) %*% totalFinalPurchases_CN
+exportsInterregionalFinal_MEZ <- diag(int_trade_df_MEZ) %*% totalFinalPurchases_MEZ
+exportsInterregionalFinal_Ext <- diag(int_trade_df_Ext) %*% totalFinalPurchases_Ext
+
+# Repeat the above step for different sub-regions of NW
+exportsInterregionalFinal_NW1 <- diag(int_trade_df_NW1) %*% totalFinalPurchases_NW
+exportsInterregionalFinal_NW2 <- diag(int_trade_df_NW2) %*% totalFinalPurchases_NE
+exportsInterregionalFinal_NW3 <- diag(int_trade_df_NW3) %*% totalFinalPurchases_CN
+exportsInterregionalFinal_NW4 <- diag(int_trade_df_NW4) %*% totalFinalPurchases_Ext
+
+# Ensure missing values in external region data are filled with zeros
+totalFinalPurchases_Ext <- fillmissing(totalFinalPurchases_Ext, 'constant', 0)
+
+# Step 14: Calculate intermediate purchases and internal production for all regions
+Total_NW <- rowSums(NW_MRIO)
+internationalImportsMatrix_MEZ <- diag(Foreign_imp_int) %*% totalIntermediatePurchases_MEZ
+Foreign_Import_intermediate <- rowSums(internationalImportsMatrix_MEZ)
