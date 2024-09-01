@@ -40,7 +40,7 @@ To use the code, ensure you have the required input data, including the MRIO tab
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is released under the Creative Commons Zero v1.0 Universal (CC0 1.0) license. This means that the work has been dedicated to the public domain to the fullest extent permitted by law. You can copy, modify, distribute, and perform the work, even for commercial purposes, all without asking permission. See the LICENSE file for details.
 
 ## Contributions
 
@@ -48,4 +48,4 @@ Contributions are welcome! Please fork the repository and submit a pull request 
 
 ## Contact
 
-For any questions or further information, please contact [Your Name] at [Your Email].
+For any questions or further information, please contact [Oleksandr Galychyn] at [ogalychyn@yahoo.com].
