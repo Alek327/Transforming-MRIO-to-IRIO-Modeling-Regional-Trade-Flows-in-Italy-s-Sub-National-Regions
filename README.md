@@ -1,7 +1,7 @@
 
 Explanation of the Code
 
-1. Internal Production Calculation (Steps 1-4)**:
+1. Internal Production Calculation (Steps 1-4):
    - The code begins by calculating the internal production for five Italian sub-national regions: Northwest (NW), Northeast (NE), Central (CN - Toscana), Mediterranean (MEZ - Centro), and External (Ext - Sud).
    - Internal Production Matrices: These matrices represent the production within each region that is used internally. They are calculated by post-multiplying the total flow matrices (representing the total output of each region) by a diagonal matrix of internal production shares. These shares are determined by subtracting the ratio of intermediate imports (both interregional and international) to the total resources available for each commodity from 1. This ratio, called `dint`, reflects the portion of total resources that is imported rather than produced internally.
 
