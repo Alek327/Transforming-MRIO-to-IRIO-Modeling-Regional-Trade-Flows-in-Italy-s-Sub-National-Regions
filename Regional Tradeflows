@@ -1,117 +1,357 @@
-# Step 1: Calculate total resources for each region
-Total_resources_NW <- rowSums(NW)         # Northwest Italy
-Total_resources_NE <- rowSums(NE)         # Northeast Italy
-Total_resources_CN <- rowSums(CN)         # Central Italy (Toscana)
-Total_resources_MEZ <- rowSums(MEZ)       # Mediterranean Italy (Centro)
-Total_resources_Ext <- rowSums(Ext)       # External (Sud)
+# ------------------------ Part 1: Initial Setup and Data Preparation ------------------------
 
-# Step 2: Calculate diagonal matrix for intermediate imports to total resources ratio for each region
-dint_NW <- diag(Imp_intermediate_NW' / Total_resources_NW)
-dint_NE <- diag(Imp_intermediate_NE' / Total_resources_NE)
-dint_CN <- diag(Imp_intermediate_CN' / Total_resources_CN)
-dint_MEZ <- diag(Imp_intermediate_MEZ' / Total_resources_MEZ)
-dint_Ext <- diag(Imp_intermediate_Ext' / Total_resources_Ext)
+# Load necessary libraries (if needed)
+# library(...) # Uncomment if you need to load specific libraries
 
-# Step 3: Calculate intermediate flow shares for internal production for each region
-IntShares_NW <- L - dint_NW
-IntShares_NE <- L - dint_NE
-IntShares_CN <- L - dint_CN
-IntShares_MEZ <- L - dint_MEZ
-IntShares_Ext <- L - dint_Ext
+# Load data
+load("~/MRIO (ALL).RData")
 
-# Step 4: Compute internal production matrix for each region
-internalProduction_NW <- NW %*% IntShares_NW
-internalProduction_NE <- NE %*% IntShares_NE
-internalProduction_CN <- CN %*% IntShares_CN
-internalProduction_MEZ <- MEZ %*% IntShares_MEZ
-internalProduction_Ext <- Ext %*% IntShares_Ext
+# Define the identity matrix (L) with dimensions matching the number of sectors (43 sectors)
+L <- diag(43)  # Identity matrix of size 43x43
 
-# Step 5: Calculate total intermediate purchases as shares of total resources for each region
-totalIntermediatePurchases_NW <- NW / Total_resources_NW
-totalIntermediatePurchases_NE <- NE / Total_resources_NE
-totalIntermediatePurchases_CN <- CN / Total_resources_CN
-totalIntermediatePurchases_MEZ <- MEZ / Total_resources_MEZ
-totalIntermediatePurchases_Ext <- Ext / Total_resources_Ext
+# ------------------------ Part 2: Total Resources and Imports Calculation ------------------------
 
-# Step 6: Calculate interregional intermediate imports for each region
-importsInterregional_NW <- diag(int_trade_2019_NW) %*% totalIntermediatePurchases_NW
-importsInterregional_NE <- diag(int_trade_2019_NE) %*% totalIntermediatePurchases_NE
-importsInterregional_CN <- diag(int_trade_2019_CN) %*% totalIntermediatePurchases_CN
-importsInterregional_MEZ <- diag(int_trade_2019_MEZ) %*% totalIntermediatePurchases_MEZ
-importsInterregional_Ext <- diag(int_trade_2019_Ext) %*% totalIntermediatePurchases_Ext
+# Step 1: Calculate total resources for each region (restricted to the first 43 sectors)
+Total_resources_NW <- rowSums(IOT_NW[1:43, 1:43])          # Northwest Italy
+Total_resources_NE <- rowSums(IOT_NE[1:43, 1:43])          # Northeast Italy
+Total_resources_Toscana <- rowSums(IOT_Toscana[1:43, 1:43]) # Toscana
+Total_resources_Centro <- rowSums(IOT_Centro[1:43, 1:43])   # Centro
+Total_resources_Sud <- rowSums(IOT_Sud[1:43, 1:43])         # Sud
+Total_resources_Ext <- rowSums(IOT_Ext[1:43, 1:43])         # Ext
 
-# Step 7: Calculate international intermediate imports for MEZ (Mediterranean Italy - Centro)
-internationalImportsMatrix_MEZ <- diag(Foreign_imp_int) %*% totalIntermediatePurchases_MEZ
+# ------------------------ Part 3: Total Intermediate Purchases Calculation ------------------------
 
-# Step 8: Calculate normalized interregional imports by total intermediate purchases (MEZ)
-S_MEZ <- rowSums(importsInterregional_MEZ)
-d_MEZ <- importsInterregional_MEZ / S_MEZ
-importsInterregional_MEZ_normalized <- diag(int_trade_2019_MEZ) %*% d_MEZ
+# Calculate total intermediate purchases as shares of total resources for each region
+totalIntermediatePurchases_NW <- IOT_NW[1:43, 1:43] / Total_resources_NW[1:43]
+totalIntermediatePurchases_NE <- IOT_NE[1:43, 1:43] / Total_resources_NE[1:43]
+totalIntermediatePurchases_Toscana <- IOT_Toscana[1:43, 1:43] / Total_resources_Toscana[1:43]
+totalIntermediatePurchases_Centro <- IOT_Centro[1:43, 1:43] / Total_resources_Centro[1:43]
+totalIntermediatePurchases_Sud <- IOT_Sud[1:43, 1:43] / Total_resources_Sud[1:43]
+totalIntermediatePurchases_Ext <- IOT_Ext[1:43, 1:43] / Total_resources_Ext[1:43]
 
-# Step 9: Normalize internal production by total production for each region
-S_NW <- rowSums(internalProduction_NW)
-S_NE <- rowSums(internalProduction_NE)
-S_CN <- rowSums(internalProduction_CN)
-S_MEZ <- rowSums(internalProduction_MEZ)
-S_Ext <- rowSums(internalProduction_Ext)
+# ------------------------ Part 4: Intermediate Imports Calculation ------------------------
 
-d_NW <- internalProduction_NW / S_NW
-d_NE <- internalProduction_NE / S_NE
-d_CN <- internalProduction_CN / S_CN
-d_MEZ <- internalProduction_MEZ / S_MEZ
-d_Ext <- internalProduction_Ext / S_Ext
+# Step 1: Extract intermediate imports for each region
+Imp_intermediate_NW <- IOT_NW[46, 1:43] + IOT_NW[48, 1:43]
+Imp_intermediate_NE <- IOT_NE[46, 1:43] + IOT_NE[48, 1:43]
+Imp_intermediate_Toscana <- IOT_Toscana[46, 1:43] + IOT_Toscana[48, 1:43]
+Imp_intermediate_Centro <- IOT_Centro[46, 1:43] + IOT_Centro[48, 1:43]
+Imp_intermediate_Sud <- IOT_Sud[46, 1:43] + IOT_Sud[48, 1:43]
+Imp_intermediate_Ext <- IOT_Ext[46, 1:43] + IOT_Ext[48, 1:43]
 
-# Step 10: Calculate total final consumption and corresponding shares for each region
-total_final_consumption_NW <- rowSums(final_consumption_NW)
-total_final_consumption_NE <- rowSums(final_consumption_NE)
-total_final_consumption_CN <- rowSums(final_consumption_CN)
-total_final_consumption_MEZ <- rowSums(final_consumption_MEZ)
-total_final_consumption_Ext <- rowSums(final_consumption_Ext)
+# Step 2: Extract foreign intermediate imports for each region
+Foreign_imp_int_NW <- IOT_NW[48, 1:43]
+Foreign_imp_int_NE <- IOT_NE[48, 1:43]
+Foreign_imp_int_Toscana <- IOT_Toscana[48, 1:43]
+Foreign_imp_int_Centro <- IOT_Centro[48, 1:43]
+Foreign_imp_int_Sud <- IOT_Sud[48, 1:43]
+Foreign_imp_int_Ext <- IOT_Ext[48, 1:43]
 
-dfin_NW <- diag(Imp_final_NW' / total_final_consumption_NW)
-dfin_NE <- diag(Imp_final_NE' / total_final_consumption_NE)
-dfin_CN <- diag(Imp_final_CN' / total_final_consumption_CN)
-dfin_MEZ <- diag(Imp_final_MEZ' / total_final_consumption_MEZ)
-dfin_Ext <- diag(Imp_final_Ext' / total_final_consumption_Ext)
+# Step 3: Calculate final imports for each region
+Imp_final_NW <- IOT_NW[47, 1:43] + IOT_NW[49, 1:43]
+Imp_final_NE <- IOT_NE[47, 1:43] + IOT_NE[49, 1:43]
+Imp_final_Toscana <- IOT_Toscana[47, 1:43] + IOT_Toscana[49, 1:43]
+Imp_final_Centro <- IOT_Centro[47, 1:43] + IOT_Centro[49, 1:43]
+Imp_final_Sud <- IOT_Sud[47, 1:43] + IOT_Sud[49, 1:43]
+Imp_final_Ext <- IOT_Ext[47, 1:43] + IOT_Ext[49, 1:43]
 
-# Step 11: Calculate final consumption flow shares for internal production for each region
-FinShares_NW <- L - dfin_NW
-FinShares_NE <- L - dfin_NE
-FinShares_CN <- L - dfin_CN
-FinShares_MEZ <- L - dfin_MEZ
-FinShares_Ext <- L - dfin_Ext
+# ------------------------ Part 5: Define and Calculate Internal Production Shares (IntShares_*) ------------------------
 
-# Compute final consumption internal production for each region
-finalConsumptionInternal_NW <- final_consumption_NW * rowSums(FinShares_NW)
-finalConsumptionInternal_NE <- final_consumption_NE * rowSums(FinShares_NE)
-finalConsumptionInternal_CN <- final_consumption_CN * rowSums(FinShares_CN)
-finalConsumptionInternal_MEZ <- final_consumption_MEZ * rowSums(FinShares_MEZ)
-finalConsumptionInternal_Ext <- final_consumption_Ext * rowSums(FinShares_Ext)
+# Define the internal production shares for each region as the complement of intermediate import shares
+IntShares_NW <- 1 - (Imp_intermediate_NW / Total_resources_NW[1:43])
+IntShares_NE <- 1 - (Imp_intermediate_NE / Total_resources_NE[1:43])
+IntShares_Toscana <- 1 - (Imp_intermediate_Toscana / Total_resources_Toscana[1:43])
+IntShares_Centro <- 1 - (Imp_intermediate_Centro / Total_resources_Centro[1:43])
+IntShares_Sud <- 1 - (Imp_intermediate_Sud / Total_resources_Sud[1:43])
+IntShares_Ext <- 1 - (Imp_intermediate_Ext / Total_resources_Ext[1:43])
 
-# Step 12: Calculate total final purchases as shares of total consumption for each region
-totalFinalPurchases_NW <- final_consumption_NW / total_final_consumption_NW
-totalFinalPurchases_NE <- final_consumption_NE / total_final_consumption_NE
-totalFinalPurchases_CN <- final_consumption_CN / total_final_consumption_CN
-totalFinalPurchases_MEZ <- final_consumption_MEZ / total_final_consumption_MEZ
-totalFinalPurchases_Ext <- final_consumption_Ext / total_final_consumption_Ext
+# ------------------------ Part 6: Define and Calculate Interregional Final Exports (exportsInterregionalfinal_*) ------------------------
 
-# Step 13: Calculate interregional final exports for each region
-exportsInterregionalFinal_NW <- diag(int_trade_df_NW) %*% totalFinalPurchases_NW
-exportsInterregionalFinal_NE <- diag(int_trade_df_NE) %*% totalFinalPurchases_NE
-exportsInterregionalFinal_CN <- diag(int_trade_df_CN) %*% totalFinalPurchases_CN
-exportsInterregionalFinal_MEZ <- diag(int_trade_df_MEZ) %*% totalFinalPurchases_MEZ
-exportsInterregionalFinal_Ext <- diag(int_trade_df_Ext) %*% totalFinalPurchases_Ext
+# Define interregional final exports for each region (extracted from trade_finale_matrix)
+# For Toscana region
+int_trade_int_Toscana1 <- trade_finale_matrix[87:129, 1]  # Exports from Toscana to NW
+int_trade_int_Toscana2 <- trade_finale_matrix[87:129, 2]  # Exports from Toscana to NE
+int_trade_int_Toscana3 <- trade_finale_matrix[87:129, 4]  # Exports from Toscana to Centro
+int_trade_int_Toscana4 <- trade_finale_matrix[87:129, 5]  # Exports from Toscana to Sud
+int_trade_int_Toscana5 <- trade_finale_matrix[87:129, 6]  # Exports from Toscana to Ext
 
-# Repeat the above step for different sub-regions of NW
-exportsInterregionalFinal_NW1 <- diag(int_trade_df_NW1) %*% totalFinalPurchases_NW
-exportsInterregionalFinal_NW2 <- diag(int_trade_df_NW2) %*% totalFinalPurchases_NE
-exportsInterregionalFinal_NW3 <- diag(int_trade_df_NW3) %*% totalFinalPurchases_CN
-exportsInterregionalFinal_NW4 <- diag(int_trade_df_NW4) %*% totalFinalPurchases_Ext
+# Calculate interregional final exports for Toscana based on trade flows to other regions
+exportsInterregionalfinal_Toscana1 <- diag(as.vector(int_trade_int_Toscana1)) %*% totalIntermediatePurchases_NW
+exportsInterregionalfinal_Toscana2 <- diag(as.vector(int_trade_int_Toscana2)) %*% totalIntermediatePurchases_NE
+exportsInterregionalfinal_Toscana3 <- diag(as.vector(int_trade_int_Toscana3)) %*% totalIntermediatePurchases_Centro
+exportsInterregionalfinal_Toscana4 <- diag(as.vector(int_trade_int_Toscana4)) %*% totalIntermediatePurchases_Sud
+exportsInterregionalfinal_Toscana5 <- diag(as.vector(int_trade_int_Toscana5)) %*% totalIntermediatePurchases_Ext
 
-# Ensure missing values in external region data are filled with zeros
-totalFinalPurchases_Ext <- fillmissing(totalFinalPurchases_Ext, 'constant', 0)
+# Combine all Toscana exports into a single variable
+exportsInterregionalfinal_Toscana <- exportsInterregionalfinal_Toscana1 + exportsInterregionalfinal_Toscana2 + exportsInterregionalfinal_Toscana3 + exportsInterregionalfinal_Toscana4 + exportsInterregionalfinal_Toscana5
 
-# Step 14: Calculate intermediate purchases and internal production for all regions
-Total_NW <- rowSums(NW_MRIO)
-internationalImportsMatrix_MEZ <- diag(Foreign_imp_int) %*% totalIntermediatePurchases_MEZ
-Foreign_Import_intermediate <- rowSums(internationalImportsMatrix_MEZ)
+# Similarly define and calculate interregional final exports for the other regions (NW, NE, Centro, Sud, Ext)
+
+# For NW region
+int_trade_int_NW2 <- trade_finale_matrix[1:43, 2]  # Exports from NW to NE
+int_trade_int_NW3 <- trade_finale_matrix[1:43, 3]  # Exports from NW to Toscana
+int_trade_int_NW4 <- trade_finale_matrix[1:43, 4]  # Exports from NW to Centro
+int_trade_int_NW5 <- trade_finale_matrix[1:43, 5]  # Exports from NW to Sud
+int_trade_int_NW6 <- trade_finale_matrix[1:43, 6]  # Exports from NW to Ext
+
+exportsInterregionalfinal_NW <- int_trade_int_NW2 + int_trade_int_NW3 + int_trade_int_NW4 + int_trade_int_NW5 + int_trade_int_NW6
+
+# For NE region
+int_trade_int_NE1 <- trade_finale_matrix[44:86, 1]
+int_trade_int_NE3 <- trade_finale_matrix[44:86, 3]
+int_trade_int_NE4 <- trade_finale_matrix[44:86, 4]
+int_trade_int_NE5 <- trade_finale_matrix[44:86, 5]
+int_trade_int_NE6 <- trade_finale_matrix[44:86, 6]
+
+exportsInterregionalfinal_NE <- int_trade_int_NE1 + int_trade_int_NE3 + int_trade_int_NE4 + int_trade_int_NE5 + int_trade_int_NE6
+
+# For Centro region
+int_trade_int_Centro1 <- trade_finale_matrix[130:172, 1]
+int_trade_int_Centro2 <- trade_finale_matrix[130:172, 2]
+int_trade_int_Centro3 <- trade_finale_matrix[130:172, 3]
+int_trade_int_Centro4 <- trade_finale_matrix[130:172, 5]
+int_trade_int_Centro5 <- trade_finale_matrix[130:172, 6]
+
+exportsInterregionalfinal_Centro <- int_trade_int_Centro1 + int_trade_int_Centro2 + int_trade_int_Centro3 + int_trade_int_Centro4 + int_trade_int_Centro5
+
+# For Sud region
+int_trade_int_Sud1 <- trade_finale_matrix[173:215, 1]
+int_trade_int_Sud2 <- trade_finale_matrix[173:215, 2]
+int_trade_int_Sud3 <- trade_finale_matrix[173:215, 3]
+int_trade_int_Sud4 <- trade_finale_matrix[173:215, 4]
+int_trade_int_Sud5 <- trade_finale_matrix[173:215, 6]
+
+exportsInterregionalfinal_Sud <- int_trade_int_Sud1 + int_trade_int_Sud2 + int_trade_int_Sud3 + int_trade_int_Sud4 + int_trade_int_Sud5
+
+# For Ext region
+int_trade_int_Ext1 <- trade_finale_matrix[216:258, 1]
+int_trade_int_Ext2 <- trade_finale_matrix[216:258, 2]
+int_trade_int_Ext3 <- trade_finale_matrix[216:258, 3]
+int_trade_int_Ext4 <- trade_finale_matrix[216:258, 4]
+int_trade_int_Ext5 <- trade_finale_matrix[216:258, 6]
+
+exportsInterregionalfinal_Ext <- int_trade_int_Ext1 + int_trade_int_Ext2 + int_trade_int_Ext3 + int_trade_int_Ext4 + int_trade_int_Ext5
+
+# ------------------------ Part 7: Final Consumption Shares (FinShares_*) Calculation ------------------------
+
+# Step 1: Calculate total final consumption for each region
+total_final_consumption_NW <- rowSums(IOT_NW[1:43, 44:49])
+total_final_consumption_NE <- rowSums(IOT_NE[1:43, 44:49])
+total_final_consumption_Toscana <- rowSums(IOT_Toscana[1:43, 44:49])
+total_final_consumption_Centro <- rowSums(IOT_Centro[1:43, 44:49])
+total_final_consumption_Sud <- rowSums(IOT_Sud[1:43, 44:49])
+total_final_consumption_Ext <- rowSums(IOT_Ext[1:43, 44:49])
+
+# Step 2: Calculate final consumption flow shares for internal production for each region
+FinShares_NW <- 1 - (Imp_final_NW / total_final_consumption_NW)
+FinShares_NE <- 1 - (Imp_final_NE / total_final_consumption_NE)
+FinShares_Toscana <- 1 - (Imp_final_Toscana / total_final_consumption_Toscana)
+FinShares_Centro <- 1 - (Imp_final_Centro / total_final_consumption_Centro)
+FinShares_Sud <- 1 - (Imp_final_Sud / total_final_consumption_Sud)
+FinShares_Ext <- 1 - (Imp_final_Ext / total_final_consumption_Ext)
+
+# ------------------------ Part 8: Internal Production Calculation ------------------------
+
+# Ensure the correct matrix multiplication and preserve 43x43 structure for internalProduction
+internalProduction_NW <- IOT_NW[1:43, 1:43] %*% diag(IntShares_NW)  # Now 43x43
+internalProduction_NE <- IOT_NE[1:43, 1:43] %*% diag(IntShares_NE)
+internalProduction_Toscana <- IOT_Toscana[1:43, 1:43] %*% diag(IntShares_Toscana)
+internalProduction_Centro <- IOT_Centro[1:43, 1:43] %*% diag(IntShares_Centro)
+internalProduction_Sud <- IOT_Sud[1:43, 1:43] %*% diag(IntShares_Sud)
+internalProduction_Ext <- IOT_Ext[1:43, 1:43] %*% diag(IntShares_Ext)
+
+# ------------------------ Part 9: Final Consumption Internal Production Calculation ------------------------
+
+# Final consumption internal production for each region (element-wise multiplication)
+finalConsumptionInternal_NW <- total_final_consumption_NW * FinShares_NW
+finalConsumptionInternal_NE <- total_final_consumption_NE * FinShares_NE
+finalConsumptionInternal_Toscana <- total_final_consumption_Toscana * FinShares_Toscana
+finalConsumptionInternal_Centro <- total_final_consumption_Centro * FinShares_Centro
+finalConsumptionInternal_Sud <- total_final_consumption_Sud * FinShares_Sud
+finalConsumptionInternal_Ext <- total_final_consumption_Ext * FinShares_Ext
+
+# ------------------------ Part 10: Define and Calculate Interregional Final Imports (importsInterregionalfinal_*) ------------------------
+
+# For NW region
+int_trade_df_NW2 <- matrix(trade_finale_matrix[44:86, 1], ncol = 1)  # Imports from NE to NW
+int_trade_df_NW3 <- matrix(trade_finale_matrix[87:129, 1], ncol = 1)  # Imports from Toscana to NW
+int_trade_df_NW4 <- matrix(trade_finale_matrix[130:172, 1], ncol = 1)  # Imports from Centro to NW
+int_trade_df_NW5 <- matrix(trade_finale_matrix[173:215, 1], ncol = 1)  # Imports from Sud to NW
+int_trade_df_NW6 <- matrix(trade_finale_matrix[216:258, 1], ncol = 1)  # Imports from Ext to NW
+
+importsInterregionalfinal_NW2 <- diag(as.vector(int_trade_df_NW2)) %*% totalIntermediatePurchases_NW
+importsInterregionalfinal_NW3 <- diag(as.vector(int_trade_df_NW3)) %*% totalIntermediatePurchases_NW
+importsInterregionalfinal_NW4 <- diag(as.vector(int_trade_df_NW4)) %*% totalIntermediatePurchases_NW
+importsInterregionalfinal_NW5 <- diag(as.vector(int_trade_df_NW5)) %*% totalIntermediatePurchases_NW
+importsInterregionalfinal_NW6 <- diag(as.vector(int_trade_df_NW6)) %*% totalIntermediatePurchases_NW
+
+# Combine all imports into a matrix for NW
+importsInterregionalfinal_NW <- importsInterregionalfinal_NW2 + importsInterregionalfinal_NW3 + importsInterregionalfinal_NW4 + importsInterregionalfinal_NW5 + importsInterregionalfinal_NW6
+
+# Repeat similar process for NE, Toscana, Centro, Sud, Ext regions
+# For NE region
+int_trade_df_NE1 <- matrix(trade_finale_matrix[1:43, 2], ncol = 1)
+int_trade_df_NE3 <- matrix(trade_finale_matrix[87:129, 2], ncol = 1)
+int_trade_df_NE4 <- matrix(trade_finale_matrix[130:172, 2], ncol = 1)
+int_trade_df_NE5 <- matrix(trade_finale_matrix[173:215, 2], ncol = 1)
+int_trade_df_NE6 <- matrix(trade_finale_matrix[216:258, 2], ncol = 1)
+
+importsInterregionalfinal_NE1 <- diag(as.vector(int_trade_df_NE1)) %*% totalIntermediatePurchases_NE
+importsInterregionalfinal_NE3 <- diag(as.vector(int_trade_df_NE3)) %*% totalIntermediatePurchases_NE
+importsInterregionalfinal_NE4 <- diag(as.vector(int_trade_df_NE4)) %*% totalIntermediatePurchases_NE
+importsInterregionalfinal_NE5 <- diag(as.vector(int_trade_df_NE5)) %*% totalIntermediatePurchases_NE
+importsInterregionalfinal_NE6 <- diag(as.vector(int_trade_df_NE6)) %*% totalIntermediatePurchases_NE
+
+# Combine all imports into a matrix for NE
+importsInterregionalfinal_NE <- importsInterregionalfinal_NE1 + importsInterregionalfinal_NE3 + importsInterregionalfinal_NE4 + importsInterregionalfinal_NE5 + importsInterregionalfinal_NE6
+
+# Similarly for Toscana, Centro, Sud, Ext
+# For Toscana region
+int_trade_df_Toscana1 <- matrix(trade_finale_matrix[1:43, 3], ncol = 1)
+int_trade_df_Toscana2 <- matrix(trade_finale_matrix[44:86, 3], ncol = 1)
+int_trade_df_Toscana4 <- matrix(trade_finale_matrix[130:172, 3], ncol = 1)
+int_trade_df_Toscana5 <- matrix(trade_finale_matrix[173:215, 3], ncol = 1)
+int_trade_df_Toscana6 <- matrix(trade_finale_matrix[216:258, 3], ncol = 1)
+
+importsInterregionalfinal_Toscana1 <- diag(as.vector(int_trade_df_Toscana1)) %*% totalIntermediatePurchases_Toscana
+importsInterregionalfinal_Toscana2 <- diag(as.vector(int_trade_df_Toscana2)) %*% totalIntermediatePurchases_Toscana
+importsInterregionalfinal_Toscana4 <- diag(as.vector(int_trade_df_Toscana4)) %*% totalIntermediatePurchases_Toscana
+importsInterregionalfinal_Toscana5 <- diag(as.vector(int_trade_df_Toscana5)) %*% totalIntermediatePurchases_Toscana
+importsInterregionalfinal_Toscana6 <- diag(as.vector(int_trade_df_Toscana6)) %*% totalIntermediatePurchases_Toscana
+
+importsInterregionalfinal_Toscana <- importsInterregionalfinal_Toscana1 + importsInterregionalfinal_Toscana2 + importsInterregionalfinal_Toscana4 + importsInterregionalfinal_Toscana5 + importsInterregionalfinal_Toscana6
+
+# Similarly for Centro, Sud, Ext
+# For Centro region
+int_trade_df_Centro1 <- matrix(trade_finale_matrix[1:43, 4], ncol = 1)
+int_trade_df_Centro2 <- matrix(trade_finale_matrix[44:86, 4], ncol = 1)
+int_trade_df_Centro3 <- matrix(trade_finale_matrix[87:129, 4], ncol = 1)
+int_trade_df_Centro5 <- matrix(trade_finale_matrix[173:215, 4], ncol = 1)
+int_trade_df_Centro6 <- matrix(trade_finale_matrix[216:258, 4], ncol = 1)
+
+importsInterregionalfinal_Centro1 <- diag(as.vector(int_trade_df_Centro1)) %*% totalIntermediatePurchases_Centro
+importsInterregionalfinal_Centro2 <- diag(as.vector(int_trade_df_Centro2)) %*% totalIntermediatePurchases_Centro
+importsInterregionalfinal_Centro3 <- diag(as.vector(int_trade_df_Centro3)) %*% totalIntermediatePurchases_Centro
+importsInterregionalfinal_Centro5 <- diag(as.vector(int_trade_df_Centro5)) %*% totalIntermediatePurchases_Centro
+importsInterregionalfinal_Centro6 <- diag(as.vector(int_trade_df_Centro6)) %*% totalIntermediatePurchases_Centro
+
+importsInterregionalfinal_Centro <- importsInterregionalfinal_Centro1 + importsInterregionalfinal_Centro2 + importsInterregionalfinal_Centro3 + importsInterregionalfinal_Centro5 + importsInterregionalfinal_Centro6
+
+# For Sud region
+int_trade_df_Sud1 <- matrix(trade_finale_matrix[1:43, 5], ncol = 1)
+int_trade_df_Sud2 <- matrix(trade_finale_matrix[44:86, 5], ncol = 1)
+int_trade_df_Sud3 <- matrix(trade_finale_matrix[87:129, 5], ncol = 1)
+int_trade_df_Sud4 <- matrix(trade_finale_matrix[130:172, 5], ncol = 1)
+int_trade_df_Sud6 <- matrix(trade_finale_matrix[216:258, 5], ncol = 1)
+
+importsInterregionalfinal_Sud1 <- diag(as.vector(int_trade_df_Sud1)) %*% totalIntermediatePurchases_Sud
+importsInterregionalfinal_Sud2 <- diag(as.vector(int_trade_df_Sud2)) %*% totalIntermediatePurchases_Sud
+importsInterregionalfinal_Sud3 <- diag(as.vector(int_trade_df_Sud3)) %*% totalIntermediatePurchases_Sud
+importsInterregionalfinal_Sud4 <- diag(as.vector(int_trade_df_Sud4)) %*% totalIntermediatePurchases_Sud
+importsInterregionalfinal_Sud6 <- diag(as.vector(int_trade_df_Sud6)) %*% totalIntermediatePurchases_Sud
+
+importsInterregionalfinal_Sud <- importsInterregionalfinal_Sud1 + importsInterregionalfinal_Sud2 + importsInterregionalfinal_Sud3 + importsInterregionalfinal_Sud4 + importsInterregionalfinal_Sud6
+
+# For Ext region
+int_trade_df_Ext1 <- matrix(trade_finale_matrix[1:43, 6], ncol = 1)
+int_trade_df_Ext2 <- matrix(trade_finale_matrix[44:86, 6], ncol = 1)
+int_trade_df_Ext3 <- matrix(trade_finale_matrix[87:129, 6], ncol = 1)
+int_trade_df_Ext4 <- matrix(trade_finale_matrix[130:172, 6], ncol = 1)
+int_trade_df_Ext5 <- matrix(trade_finale_matrix[173:215, 6], ncol = 1)
+
+importsInterregionalfinal_Ext1 <- diag(as.vector(int_trade_df_Ext1)) %*% totalIntermediatePurchases_Ext
+importsInterregionalfinal_Ext2 <- diag(as.vector(int_trade_df_Ext2)) %*% totalIntermediatePurchases_Ext
+importsInterregionalfinal_Ext3 <- diag(as.vector(int_trade_df_Ext3)) %*% totalIntermediatePurchases_Ext
+importsInterregionalfinal_Ext4 <- diag(as.vector(int_trade_df_Ext4)) %*% totalIntermediatePurchases_Ext
+importsInterregionalfinal_Ext5 <- diag(as.vector(int_trade_df_Ext5)) %*% totalIntermediatePurchases_Ext
+
+importsInterregionalfinal_Ext <- importsInterregionalfinal_Ext1 + importsInterregionalfinal_Ext2 + importsInterregionalfinal_Ext3 + importsInterregionalfinal_Ext4 + importsInterregionalfinal_Ext5
+
+# ------------------------ Part 11: Consistency Checks ------------------------
+
+# Consistency checks for Total_columns and Total_rows for each region
+
+# For NW region
+internalProduction_NW_vector <- rowSums(internalProduction_NW)
+importsInterregional_NW_vector <- rowSums(importsInterregionalfinal_NW)
+
+# Total_columns_NW should be a vector of length 43
+Total_columns_NW <- internalProduction_NW_vector + importsInterregional_NW_vector + Foreign_imp_int_NW
+
+# Total_rows_NW should also be a vector of length 43
+Total_rows_NW <- internalProduction_NW_vector + exportsInterregionalfinal_NW + finalConsumptionInternal_NW + rowSums(importsInterregionalfinal_NW)
+
+# Similarly calculate Total_rows and Total_columns for NE
+internalProduction_NE_vector <- rowSums(internalProduction_NE)
+importsInterregional_NE_vector <- rowSums(importsInterregionalfinal_NE)
+
+# Total_columns_NE should be a vector of length 43
+Total_columns_NE <- internalProduction_NE_vector + importsInterregional_NE_vector + Foreign_imp_int_NE
+
+# Total_rows_NE should also be a vector of length 43
+Total_rows_NE <- internalProduction_NE_vector + exportsInterregionalfinal_NE + finalConsumptionInternal_NE + rowSums(importsInterregionalfinal_NE)
+
+# Similarly for Toscana, Centro, Sud, Ext
+internalProduction_Toscana_vector <- rowSums(internalProduction_Toscana)
+importsInterregional_Toscana_vector <- rowSums(importsInterregionalfinal_Toscana)
+
+Total_columns_Toscana <- internalProduction_Toscana_vector + importsInterregional_Toscana_vector + Foreign_imp_int_Toscana
+Total_rows_Toscana <- internalProduction_Toscana_vector + exportsInterregionalfinal_Toscana + finalConsumptionInternal_Toscana + rowSums(importsInterregionalfinal_Toscana)
+
+internalProduction_Centro_vector <- rowSums(internalProduction_Centro)
+importsInterregional_Centro_vector <- rowSums(importsInterregionalfinal_Centro)
+
+Total_columns_Centro <- internalProduction_Centro_vector + importsInterregional_Centro_vector + Foreign_imp_int_Centro
+Total_rows_Centro <- internalProduction_Centro_vector + exportsInterregionalfinal_Centro + finalConsumptionInternal_Centro + rowSums(importsInterregionalfinal_Centro)
+
+internalProduction_Sud_vector <- rowSums(internalProduction_Sud)
+importsInterregional_Sud_vector <- rowSums(importsInterregionalfinal_Sud)
+
+Total_columns_Sud <- internalProduction_Sud_vector + importsInterregional_Sud_vector + Foreign_imp_int_Sud
+Total_rows_Sud <- internalProduction_Sud_vector + exportsInterregionalfinal_Sud + finalConsumptionInternal_Sud + rowSums(importsInterregionalfinal_Sud)
+
+internalProduction_Ext_vector <- rowSums(internalProduction_Ext)
+importsInterregional_Ext_vector <- rowSums(importsInterregionalfinal_Ext)
+
+Total_columns_Ext <- internalProduction_Ext_vector + importsInterregional_Ext_vector + Foreign_imp_int_Ext
+Total_rows_Ext <- internalProduction_Ext_vector + exportsInterregionalfinal_Ext + finalConsumptionInternal_Ext + rowSums(importsInterregionalfinal_Ext)
+
+# ------------------------ Part 12: Final Consistency Check ------------------------
+
+# Check if row sums and column sums match expected results for NW
+expected_totals_NW <- c(12523.4, 122.5, 2048.7, 45288.7, 22921.8, 4769.9, 6984.4, 4407.5, 10967.8, 26809.9, 10574.6, 22284.3, 7512.3, 30433.3, 40536.9, 9335.2, 15263.8, 52303.1, 31150.6, 11316.9, 12813.6, 7439.7, 27163.1, 3105.1, 9496.2, 65240.8, 122628.5, 73290.3, 32396.5, 12259.1, 13380.0, 29280.7, 54689.9, 78928.5, 52360.8, 8017.5, 25312.2, 42487.8, 28971.0, 20198.9, 48134.3, 13728.1, 18487.8)  # Use provided totals for NW region
+row_check_NW <- all.equal(Total_rows_NW, expected_totals_NW)
+column_check_NW <- all.equal(Total_columns_NW, expected_totals_NW)
+
+# Check if row sums and column sums match expected results for NE
+expected_totals_NE <- c(16291.8, 335.3, 617.6, 52573.4, 23405.5, 5835.7, 7093.6, 3527.3, 1483.9, 13509.0, 3946.2, 12387.0, 13947.4, 14059.7, 31680.5, 6998.6, 14771.8, 57656.2, 12137.5, 6483.3, 18917.8, 5815.9, 17052.9, 2662.5, 7435.1, 51107.9, 82281.6, 46193.9, 32523.4, 2044.7, 4343.0, 12738.3, 32646.7, 54566.3, 20415.7, 4455.5, 6959.7, 23192.2, 26451.7, 15688.4, 34958.2, 10441.2, 13554.7)
+row_check_NE <- all.equal(Total_rows_NE, expected_totals_NE)
+column_check_NE <- all.equal(Total_columns_NE, expected_totals_NE)
+
+# Check if row sums and column sums match the expected results for Toscana
+expected_totals_Toscana <- c(3547.1, 64.5, 397.7, 5750.2, 20967.7, 744.0, 4163.7, 560.3, 2205.0, 3015.0, 2216.8, 1856.5, 2107.2, 5815.5, 3901.6, 2337.8, 1739.7, 6786.9, 1743.3, 2704.6, 4700.5, 1208.0, 4859.5, 866.9, 2265.3, 10738.7, 25502.0, 12013.2, 9947.4, 524.0, 1500.6, 3055.3, 8497.0, 17585.3, 7330.9, 2662.0, 1969.8, 10507.8, 8324.4, 4966.7, 10662.9, 3476.5, 4473.3)
+row_check_Toscana <- all.equal(Total_rows_Toscana, expected_totals_Toscana)
+column_check_Toscana <- all.equal(Total_columns_Toscana, expected_totals_Toscana)
+
+# Check if row sums and column sums match expected results for Centro
+expected_totals_Centro <- c(5710.6, 193.8, 971.6, 10228.0, 10216.7, 1203.2, 2714.2, 1671.3, 2349.1, 2680.8, 6882.3, 3416.0, 2921.1, 4098.0, 6706.7, 2119.4, 4202.5, 6305.9, 1902.6, 3719.9, 4904.3, 2376.3, 9954.4, 1724.9, 4220.9, 25971.0, 54791.9, 30043.4, 17401.2, 7810.6, 10649.8, 13254.7, 20989.9, 36937.8, 19973.4, 2948.4, 5816.9, 24497.8, 31301.9, 11450.3, 23924.4, 8280.3, 10048.9)
+row_check_Centro <- all.equal(Total_rows_Centro, expected_totals_Centro)
+column_check_Centro <- all.equal(Total_columns_Centro, expected_totals_Centro)
+
+# Check if row sums and column sums match the expected results for Sud
+expected_totals_Sud <- c(21999.9, 906.6, 3074.5, 29172.3, 7920.8, 1726.1, 3222.6, 1224.2, 25824.9, 4735.5, 2995.0, 4917.0, 4515.4, 6347.0, 8915.1, 2477.7, 3392.7, 5656.3, 16569.7, 6323.9, 3317.8, 4257.7, 33254.9, 3724.1, 9284.5, 40056.0, 87650.6, 40890.5, 30449.3, 1278.8, 8472.2, 5854.4, 20717.7, 58368.2, 14834.7, 3864.4, 4156.2, 17402.3, 53987.5, 28196.2, 48948.8, 9812.8, 14639.5)
+row_check_Sud <- all.equal(Total_rows_Sud, expected_totals_Sud)
+column_check_Sud <- all.equal(Total_columns_Sud, expected_totals_Sud)
+
+# Check if row sums and column sums match expected results for Ext
+expected_totals_Ext <- c(0, 0, 1616.3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 457, 0, 0, 0,0)
+row_check_Ext <- all.equal(Total_rows_Ext, expected_totals_Ext)
+column_check_Ext <- all.equal(Total_columns_Ext, expected_totals_Ext)
+
+# Output consistency results for all regions:
+cat("NW Region - Row check: ", row_check_NW, " - Column check: ", column_check_NW, "\n")
+cat("NE Region - Row check: ", row_check_NE, " - Column check: ", column_check_NE, "\n")
+cat("Toscana Region - Row check: ", row_check_Toscana, " - Column check: ", column_check_Toscana, "\n")
+cat("Centro Region - Row check: ", row_check_Centro, " - Column check: ", column_check_Centro, "\n")
+cat("Sud Region - Row check: ", row_check_Sud, " - Column check: ", column_check_Sud, "\n")
+cat("Ext Region - Row check: ", row_check_Ext, " - Column check: ", column_check_Ext, "\n")
